@@ -118,6 +118,8 @@ mod tests {
     use pnet::util::MacAddr;
     use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
+    use crate::utils::MetaLogger;
+
     #[test]
     fn test_synack_cookie_ipv4() {
         let masscanned = Masscanned {
@@ -125,6 +127,7 @@ mod tests {
             ip_addresses: None,
             synack_key: [0x06a0a1d63f305e9b, 0xd4d4bcbb7304875f],
             iface: None,
+            log: MetaLogger::new(),
         };
         /* reference */
         let ip_src = IpAddr::V4(Ipv4Addr::new(27, 198, 143, 1));
@@ -174,6 +177,7 @@ mod tests {
             ip_addresses: None,
             synack_key: [0x06a0a1d63f305e9b, 0xd4d4bcbb7304875f],
             iface: None,
+            log: MetaLogger::new(),
         };
         /* reference */
         let ip_src = IpAddr::V6(Ipv6Addr::new(234, 52, 183, 47, 184, 172, 64, 141));
