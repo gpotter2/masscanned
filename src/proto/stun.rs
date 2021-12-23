@@ -24,6 +24,7 @@ use byteorder::{BigEndian, ByteOrder};
 use std::io;
 
 use crate::client::ClientInfo;
+use crate::proto::TCPControlBlock;
 use crate::Masscanned;
 
 /* RFC 5389: The magic cookie field MUST contain the fixed value 0x2112A442 in
@@ -354,6 +355,7 @@ pub fn repl<'a>(
     data: &'a [u8],
     _masscanned: &Masscanned,
     mut client_info: &mut ClientInfo,
+    _tcb: Option<&mut TCPControlBlock>,
 ) -> Option<Vec<u8>> {
     debug!("receiving STUN data");
     let stun_req: StunPacket = if let Ok(s) = StunPacket::new(&data) {
@@ -440,7 +442,7 @@ mod tests {
             iface: None,
             ip_addresses: Some(&ips),
         };
-        let payload_resp = if let Some(r) = repl(payload, &masscanned, &mut client_info) {
+        let payload_resp = if let Some(r) = repl(payload, &masscanned, &mut client_info, None) {
             r
         } else {
             panic!("expected an answer, got None");
@@ -503,7 +505,7 @@ mod tests {
         client_info.ip.dst = Some(IpAddr::V6(masscanned_ip_addr));
         client_info.port.src = Some(55000);
         client_info.port.dst = Some(65000);
-        let payload_resp = if let Some(r) = repl(payload, &masscanned, &mut client_info) {
+        let payload_resp = if let Some(r) = repl(payload, &masscanned, &mut client_info, None) {
             r
         } else {
             panic!("expected an answer, got None");
@@ -554,7 +556,7 @@ mod tests {
         client_info.ip.dst = Some(IpAddr::V4(masscanned_ip_addr));
         client_info.port.src = Some(55000);
         client_info.port.dst = Some(65000);
-        let payload_resp = if let Some(r) = repl(payload, &masscanned, &mut client_info) {
+        let payload_resp = if let Some(r) = repl(payload, &masscanned, &mut client_info, None) {
             r
         } else {
             panic!("expected an answer, got None");
@@ -603,7 +605,7 @@ mod tests {
         client_info.ip.dst = Some(IpAddr::V4(masscanned_ip_addr));
         client_info.port.src = Some(55000);
         client_info.port.dst = Some(65535);
-        let payload_resp = if let Some(r) = repl(payload, &masscanned, &mut client_info) {
+        let payload_resp = if let Some(r) = repl(payload, &masscanned, &mut client_info, None) {
             r
         } else {
             panic!("expected an answer, got None");

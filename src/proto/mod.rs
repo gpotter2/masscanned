@@ -25,7 +25,7 @@ use crate::smack::{Smack, SmackFlags, BASE_STATE, NO_MATCH, SMACK_CASE_SENSITIVE
 use crate::Masscanned;
 
 mod http;
-use http::HTTP_VERBS;
+use http::{ProtocolState as HTTPProtocolState, HTTP_VERBS};
 
 mod stun;
 use stun::{STUN_PATTERN_CHANGE_REQUEST, STUN_PATTERN_EMPTY, STUN_PATTERN_MAGIC};
@@ -37,7 +37,7 @@ mod ghost;
 use ghost::GHOST_PATTERN_SIGNATURE;
 
 mod rpc;
-use rpc::{RPC_CALL_TCP, RPC_CALL_UDP};
+use rpc::{ProtocolState as RPCProtocolState, RPC_CALL_TCP, RPC_CALL_UDP};
 
 const PROTO_HTTP: usize = 1;
 const PROTO_STUN: usize = 2;
@@ -46,8 +46,16 @@ const PROTO_GHOST: usize = 4;
 const PROTO_RPC_TCP: usize = 5;
 const PROTO_RPC_UDP: usize = 6;
 
-struct TCPControlBlock {
-    proto_state: usize,
+enum ProtocolState {
+    HTTPProtocolState,
+    RPCProtocolState,
+}
+
+pub struct TCPControlBlock {
+    /* state used to detect protocols (not specific) */
+    smack_state: usize,
+    /* internal state of protocol parser (e.g., HTTP parsing) */
+    proto_state: Option<ProtocolState>,
 }
 
 lazy_static! {
@@ -111,26 +119,29 @@ pub fn repl<'a>(
 ) -> Option<Vec<u8>> {
     debug!("packet payload: {:?}", data);
     let mut id;
+    let mut ct = CONTABLE.lock().unwrap();
+    let mut tcb = None;
     if client_info.transport == Some(IpNextHeaderProtocols::Tcp) && client_info.cookie == None {
         error!("Unexpected empty cookie");
         return None;
     } else if client_info.cookie != None {
         /* proto over TCP */
         let cookie = client_info.cookie.unwrap();
-        let mut ct = CONTABLE.lock().unwrap();
         if !ct.contains_key(&cookie) {
             ct.insert(
                 cookie,
                 TCPControlBlock {
-                    proto_state: BASE_STATE,
+                    smack_state: BASE_STATE,
+                    proto_state: None,
                 },
             );
         }
         let mut i = 0;
-        let mut tcb = ct.get_mut(&cookie).unwrap();
-        let mut state = tcb.proto_state;
+        let mut t = ct.get_mut(&cookie).unwrap();
+        let mut state = t.smack_state;
         id = PROTO_SMACK.search_next(&mut state, &data.to_vec(), &mut i);
-        tcb.proto_state = state;
+        t.smack_state = state;
+        tcb = Some(t);
     } else {
         /* proto over else (e.g., UDP) */
         let mut i = 0;
@@ -143,12 +154,12 @@ pub fn repl<'a>(
     }
     /* proto over else (e.g., UDP) */
     match id {
-        PROTO_HTTP => http::repl(data, masscanned, client_info),
-        PROTO_STUN => stun::repl(data, masscanned, &mut client_info),
-        PROTO_SSH => ssh::repl(data, masscanned, &mut client_info),
-        PROTO_GHOST => ghost::repl(data, masscanned, &mut client_info),
-        PROTO_RPC_TCP => rpc::repl_tcp(data, masscanned, &mut client_info),
-        PROTO_RPC_UDP => rpc::repl_udp(data, masscanned, &mut client_info),
+        PROTO_HTTP => http::repl(data, masscanned, client_info, tcb),
+        PROTO_STUN => stun::repl(data, masscanned, &mut client_info, tcb),
+        PROTO_SSH => ssh::repl(data, masscanned, &mut client_info, tcb),
+        PROTO_GHOST => ghost::repl(data, masscanned, &mut client_info, tcb),
+        PROTO_RPC_TCP => rpc::repl_tcp(data, masscanned, &mut client_info, tcb),
+        PROTO_RPC_UDP => rpc::repl_udp(data, masscanned, &mut client_info, tcb),
         _ => {
             debug!("id: {}", id);
             None
