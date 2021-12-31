@@ -142,9 +142,12 @@ pub fn repl<'a>(
         }
         let mut i = 0;
         let mut t = ct.get_mut(&cookie).unwrap();
-        let mut state = t.smack_state;
-        id = PROTO_SMACK.search_next(&mut state, &data.to_vec(), &mut i);
-        t.smack_state = state;
+        if t.proto_id == PROTO_NONE {
+            let mut state = t.smack_state;
+            t.proto_id = PROTO_SMACK.search_next(&mut state, &data.to_vec(), &mut i);
+            t.smack_state = state;
+        }
+        id = t.proto_id;
         tcb = Some(t);
     } else {
         /* proto over else (e.g., UDP) */
@@ -165,6 +168,9 @@ pub fn repl<'a>(
         PROTO_RPC_TCP => rpc::repl_tcp(data, masscanned, &mut client_info, tcb),
         PROTO_RPC_UDP => rpc::repl_udp(data, masscanned, &mut client_info, tcb),
         _ => {
+            if let Some(t) = &mut tcb {
+                t.proto_id = PROTO_NONE;
+            }
             debug!("id: {}", id);
             None
         }
