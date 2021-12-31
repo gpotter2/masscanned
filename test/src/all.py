@@ -537,6 +537,7 @@ def test_ipv4_tcp_http():
         tcp = resp[TCP]
         assert tcp.payload.load.startswith(b"HTTP/1.1 401 Unauthorized\n")
 
+
 @test
 def test_ipv4_tcp_http_incomplete():
     sport = 24595
@@ -585,6 +586,7 @@ def test_ipv4_tcp_http_incomplete():
         assert TCP in resp, "expecting TCP, got %r" % resp.summary()
         tcp = resp[TCP]
         assert tcp.flags == "A", "expecting TCP flag A, got {}".format(tcp.flags)
+
 
 @test
 def test_ipv4_tcp_http_segmented():
@@ -652,6 +654,7 @@ def test_ipv4_tcp_http_segmented():
         tcp = resp[TCP]
         assert tcp.flags == "PA"
         assert tcp.payload.load.startswith(b"HTTP/1.1 401 Unauthorized\n")
+
 
 @test
 def test_ipv6_tcp_http():
