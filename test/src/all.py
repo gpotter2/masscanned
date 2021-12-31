@@ -590,7 +590,7 @@ def test_ipv4_tcp_http_incomplete():
 
 @test
 def test_ipv4_tcp_http_segmented():
-    sport = 24592
+    sport = 24593
     dports = [80, 443, 5000, 53228]
     for dport in dports:
         seq_init = int(RandInt())
@@ -658,7 +658,7 @@ def test_ipv4_tcp_http_segmented():
 
 @test
 def test_ipv6_tcp_http():
-    sport = 24592
+    sport = 24594
     dports = [80, 443, 5000, 53228]
     for dport in dports:
         seq_init = int(RandInt())
@@ -745,7 +745,7 @@ def test_ipv6_udp_http():
 
 @test
 def test_ipv4_tcp_http_ko():
-    sport = 24592
+    sport = 24596
     dports = [80, 443, 5000, 53228]
     for dport in dports:
         seq_init = int(RandInt())
@@ -809,7 +809,7 @@ def test_ipv4_udp_http_ko():
 
 @test
 def test_ipv6_tcp_http_ko():
-    sport = 24592
+    sport = 24597
     dports = [80, 443, 5000, 53228]
     for dport in dports:
         seq_init = int(RandInt())
