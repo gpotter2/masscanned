@@ -39,6 +39,7 @@ use ghost::GHOST_PATTERN_SIGNATURE;
 mod rpc;
 use rpc::{ProtocolState as RPCProtocolState, RPC_CALL_TCP, RPC_CALL_UDP};
 
+const PROTO_NONE: usize = 0;
 const PROTO_HTTP: usize = 1;
 const PROTO_STUN: usize = 2;
 const PROTO_SSH: usize = 3;
@@ -47,13 +48,15 @@ const PROTO_RPC_TCP: usize = 5;
 const PROTO_RPC_UDP: usize = 6;
 
 enum ProtocolState {
-    HTTPProtocolState,
-    RPCProtocolState,
+    HTTP(HTTPProtocolState),
+    RPC(RPCProtocolState),
 }
 
 pub struct TCPControlBlock {
     /* state used to detect protocols (not specific) */
     smack_state: usize,
+    /* detected protocol */
+    proto_id: usize,
     /* internal state of protocol parser (e.g., HTTP parsing) */
     proto_state: Option<ProtocolState>,
 }
@@ -132,6 +135,7 @@ pub fn repl<'a>(
                 cookie,
                 TCPControlBlock {
                     smack_state: BASE_STATE,
+                    proto_id: PROTO_NONE,
                     proto_state: None,
                 },
             );
